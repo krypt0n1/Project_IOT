@@ -5,11 +5,57 @@ import csv
 from django.http import HttpResponse
 from django.utils import timezone
 from django.http import JsonResponse
-from datetime import datetime
+from datetime import datetime,timedelta
 import telepot
 from twilio.rest import Client
 
+from django.contrib.auth import authenticate, login,logout
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
 
+
+def login_user(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        # Authenticating the user
+        user = authenticate(request, username=username, password=password)
+        # Checking if authentication is successful
+        if user is not None:
+            login(request, user)
+            return redirect("/index")
+        else:
+            return render(request, 'login.html', {'error': 'Invalid credentials'})
+
+    return render(request, 'login.html')
+
+
+def logout_user(request):
+    logout(request)
+    return redirect('/')
+
+def index(request):
+    return render(request,'home.html')
+
+def tempbyday(request):
+    return render(request,'TempByDay.html')
+
+def tempbyweek(request):
+    return render(request,'TempByWeek.html')
+
+def tempbymonth(request):
+    return render(request,'TempByMonth.html')
+
+def humbyday(request):
+    return render(request,'HumByDay.html')
+def humbyweek(request):
+    return render(request,'HumByWeek.html')
+def humbymonth(request):
+    return render(request,'HumByMonth.html')
+
+def showdata(request):
+    dht_data = Dht11.objects.all()
+    return render(request , 'data_table.html',{'dht_data': dht_data})
 def table(request):
     derniere_ligne = Dht11.objects.last()
     derniere_date = Dht11.objects.last().dt
@@ -35,15 +81,30 @@ def download_csv(request):
 def index_view(request):
     return render(request, 'index.html')
 
+def download_csv(request):
+    model_values = Dht11.objects.all()
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="dht.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['id', 'temp', 'hum', 'dt'])
+    liste = model_values.values_list('id', 'temp', 'hum', 'dt')
+    for row in liste:
+        writer.writerow(row)
+    return response
+#pour afficher navbar de template
+def index_view(request):
+    return render(request, 'index.html')
 #pour afficher les graphes
+
 def graphique(request):
     return render(request, 'Chart.html')
 # récupérer toutes les valeur de température et humidity sous forme un #fichier json
+
 def chart_data(request):
     dht = Dht11.objects.all()
 
     data = {
-        'temps': [Dt.dt for Dt in dht],
+        'temps': [datetime.strftime(Dt.dt, "%m") for Dt in dht],
         'temperature': [Temp.temp for Temp in dht],
         'humidity': [Hum.hum for Hum in dht]
     }
@@ -51,6 +112,7 @@ def chart_data(request):
 
 #pour récupérer les valeurs de température et humidité de dernier 24h
 # et envoie sous forme JSON
+
 def chart_data_jour(request):
     dht = Dht11.objects.all()
     now = timezone.now()
@@ -61,7 +123,7 @@ def chart_data_jour(request):
     # Récupérer tous les objets de Module créés au cours des 24 dernières heures
     dht = Dht11.objects.filter(dt__range=(last_24_hours, now))
     data = {
-        'temps': [Dt.dt for Dt in dht],
+        'temps': [datetime.strftime(Dt.dt, "%m") for Dt in dht],
         'temperature': [Temp.temp for Temp in dht],
         'humidity': [Hum.hum for Hum in dht]
     }
@@ -71,16 +133,16 @@ def chart_data_jour(request):
 # et envoie sous forme JSON
 def chart_data_semaine(request):
     dht = Dht11.objects.all()
-    # calcul de la date de début de la semaine dernière
-    date_debut_semaine = timezone.now().date() - datetime.timedelta(days=7)
-    print(datetime.timedelta(days=7))
+    # Calculate the start date of the previous week
+    date_debut_semaine = timezone.now().date() - timedelta(days=7)
+    print(timedelta(days=7))
     print(date_debut_semaine)
 
-    # filtrer les enregistrements créés depuis le début de la semaine dernière
+    # Filter records created since the start of the previous week
     dht = Dht11.objects.filter(dt__gte=date_debut_semaine)
 
     data = {
-        'temps': [Dt.dt for Dt in dht],
+        'temps': [datetime.strftime(Dt.dt, "%m") for Dt in dht],
         'temperature': [Temp.temp for Temp in dht],
         'humidity': [Hum.hum for Hum in dht]
     }
@@ -91,19 +153,20 @@ def chart_data_semaine(request):
 # et envoie sous forme JSON
 def chart_data_mois(request):
 
-    date_debut_semaine = timezone.now().date() - datetime.timedelta(days=30)
-    print(datetime.timedelta(days=30))
+    date_debut_semaine = timezone.now().date() - timedelta(days=30)
+    print(timedelta(days=30))
     print(date_debut_semaine)
 
     # filtrer les enregistrements créés depuis le début de la semaine dernière
     dht = Dht11.objects.filter(dt__gte=date_debut_semaine)
 
     data = {
-        'temps': [Dt.dt for Dt in dht],
+        'temps': [datetime.strftime(Dt.dt, "%m") for Dt in dht],
         'temperature': [Temp.temp for Temp in dht],
         'humidity': [Hum.hum for Hum in dht]
     }
     return JsonResponse(data)
+
 
 def sendtele(dht):
     token = '6410540731:AAGa-PhazJQqERFsWCiA6p17g3P8xdDL8IE'
@@ -123,3 +186,4 @@ def sendwhatsap():
         body='🔔 la température dépasse la normale 🔔',
         to='whatsapp:+212675559660'
     )
+

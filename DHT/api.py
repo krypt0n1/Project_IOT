@@ -7,6 +7,12 @@ from django.core.mail import send_mail
 from django.conf import settings
 import rest_framework
 
+from django.contrib.auth import authenticate, login,logout
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
 @api_view(['GET'])
 def Dlist(request):
     all_data = Dht11.objects.all()

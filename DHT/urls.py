@@ -14,8 +14,15 @@ urlpatterns = [
     path('chart-data-semaine/',views.chart_data_semaine,name='chart-data-semaine'),
     path('chart-data-mois/',views.chart_data_mois,name='chart-data-mois'),
 
+    path('home/',views.index,name='home'),
+    path('tempbyday/',views.tempbyday,name='TempByDay'),
+    path('tempbyweek/',views.tempbyweek,name='TempByWeek'),
+    path('tempbymonth/',views.tempbymonth,name='TempByMonth'),
 
+    path('humbyday/',views.humbyday,name='HumByDay'),
+    path('humbyweek/',views.humbyweek,name='HumByWeek'),
+    path('humbymonth/',views.humbymonth,name='HumByMonth'),
+    path('showdata/',views.showdata,name='ShowData'),
 
-
-
+    path('', views.index, name='home'),
 ]

@@ -16,7 +16,7 @@ class Dht11(models.Model):
         if self.temp > 30:
             from DHT.views import sendtele,sendwhatsap
             sendtele(self)
-            sendwhatsap()
+            #sendwhatsap()
             # Inline HTML template enclosed in single quotes
             html_message = f'''
                         <html>
